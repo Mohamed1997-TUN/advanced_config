@@ -1,0 +1,12 @@
+config system interface
+    edit "{{ vlan_name }}"
+        set vdom "{{ vdom }}"
+        set ip {{ ipv4_address }} {{ ipv4_netmask }}
+        set allowaccess {{ allowaccess | join(' ') }}
+        set device-identification enable
+        set role {{ role }}
+        set snmp-index {{ vlan_id }}
+        set interface "{{ parent_interface }}"
+        set vlanid {{ vlan_id }}
+    next
+end
