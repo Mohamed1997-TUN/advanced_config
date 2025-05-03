@@ -4,44 +4,50 @@
   gather_facts: no
 
   vars_files:
-    - vars/matrix.yml
+    - vars/matrix.yml  # This file should define 'compliant_rules'
 
   tasks:
-
     - name: Set firewall policy from survey inputs
       set_fact:
         policy:
-          policy_name: "{{ policy_name }}"
-          srcintf: "{{ srcintf }}"
-          dstintf: "{{ dstintf }}"
-          service: "{{ service }}"
+          name: "{{ policy_name }}"
+          srcintf: "{{ policy_srcintf }}"
+          dstintf: "{{ policy_dstintf }}"
+          source: "{{ policy_source }}"
+          destination: "{{ policy_destination }}"
+          service: "{{ policy_service }}"
+          action: "{{ policy_action }}"
 
     - name: Check if rule is compliant with matrix
       set_fact:
         rule_compliant: >-
-          {{ compliant_rules | selectattr('srcintf', 'equalto', policy.srcintf)
-                            | selectattr('dstintf', 'equalto', policy.dstintf)
-                            | selectattr('allowed_services', 'defined')
-                            | selectattr('allowed_services', 'contains', policy.service)
-                            | list | length > 0 }}
+          {{
+            compliant_rules
+            | selectattr('srcintf', 'equalto', policy.srcintf)
+            | selectattr('dstintf', 'equalto', policy.dstintf)
+            | selectattr('allowed_services', 'defined')
+            | selectattr('allowed_services', 'search', policy.service)
+            | list | length > 0
+          }}
 
     - name: Show compliance result
       debug:
-        msg: >-
-          {% if rule_compliant %}
-            ✅ Rule is compliant and will be pushed.
-          {% else %}
-            ❌ Rule is NOT compliant. Skipping push.
-          {% endif %}
+        msg: "✅ The rule is compliant!"
+      when: rule_compliant
 
-    - name: Render CLI config into a local file
+    - name: Reject non-compliant rule
+      debug:
+        msg: "❌ This rule is non-compliant and will not be pushed."
+      when: not rule_compliant
+
+    - name: Render firewall rule config to a file
       ansible.builtin.template:
         src: templates/firewallrule.j2
         dest: /tmp/fortigate_config.txt
       delegate_to: localhost
       when: rule_compliant
 
-    - name: Read generated config content
+    - name: Read rendered config
       ansible.builtin.slurp:
         src: /tmp/fortigate_config.txt
       register: slurped_config
@@ -54,7 +60,12 @@
       changed_when: false
       when: rule_compliant
 
-    - name: Show push result
+    - name: Display rule creation result
       debug:
-        msg: "Firewall rule pushed successfully! Response: {{ result.stdout_lines | default([]) }}"
+        msg: "📤 Rule creation response: {{ result }}"
+      when: rule_compliant and result is defined
+
+    - name: Confirm firewall rule push success
+      debug:
+        msg: "✅ Firewall rule '{{ policy.name }}' pushed successfully!"
       when: rule_compliant and result is defined
