@@ -13,10 +13,12 @@
           name: "{{ policy_name }}"
           srcintf: "{{ policy_srcintf }}"
           dstintf: "{{ policy_dstintf }}"
-          source: "{{ policy_source }}"
-          destination: "{{ policy_destination }}"
-          service: "{{ policy_service }}"
+          source: "{{ policy_srcaddr }}"
+          destination: "{{ policy_dstaddr }}"
           action: "{{ policy_action }}"
+          schedule: "{{ policy_schedule }}"
+          service: "{{ policy_service }}"
+          nat: "{{ policy_nat }}"
 
     - name: Check if rule is compliant with matrix
       set_fact:
@@ -26,7 +28,7 @@
             | selectattr('srcintf', 'equalto', policy.srcintf)
             | selectattr('dstintf', 'equalto', policy.dstintf)
             | selectattr('allowed_services', 'defined')
-            | selectattr('allowed_services', 'search', policy.service)
+            | selectattr('allowed_services', 'search', policy.service | join(','))
             | list | length > 0
           }}
 
