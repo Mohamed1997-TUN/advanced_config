@@ -7,22 +7,18 @@
     - vars/matrix.yml  # This file should define 'compliant_rules'
 
   tasks:
-    - name: Debug survey variables
+    # Debug task to check survey variables
+    - name: Debug Survey Variables
       debug:
-        msg: "policy_name: {{ policy_name }}, policy_srcintf: {{ policy_srcintf }}, policy_dstintf: {{ policy_dstintf }}, policy_srcaddr: {{ policy_srcaddr }}, policy_dstaddr: {{ policy_dstaddr }}, policy_action: {{ policy_action }}, policy_service: {{ policy_service }}, policy_nat: {{ policy_nat }}"
-
-    - name: Check if all required survey variables are defined
-      fail:
-        msg: "Required survey variables are missing!"
-      when:
-        - policy_name is not defined
-        - policy_srcintf is not defined
-        - policy_dstintf is not defined
-        - policy_srcaddr is not defined
-        - policy_dstaddr is not defined
-        - policy_action is not defined
-        - policy_service is not defined
-        - policy_nat is not defined
+        msg:
+          - "policy_name: {{ policy_name }}"
+          - "policy_srcintf: {{ policy_srcintf }}"
+          - "policy_dstintf: {{ policy_dstintf }}"
+          - "policy_srcaddr: {{ policy_srcaddr }}"
+          - "policy_dstaddr: {{ policy_dstaddr }}"
+          - "policy_action: {{ policy_action }}"
+          - "policy_service: {{ policy_service }}"
+          - "policy_nat: {{ policy_nat }}"
 
     - name: Set firewall policy from survey inputs
       set_fact:
@@ -33,7 +29,6 @@
           source: "{{ policy_srcaddr }}"
           destination: "{{ policy_dstaddr }}"
           action: "{{ policy_action }}"
-          schedule: "{{ policy_schedule }}"
           service: "{{ policy_service }}"
           nat: "{{ policy_nat }}"
 
