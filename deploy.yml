@@ -1,0 +1,75 @@
+- name: Compliance Check and Push Firewall Policy via SSH
+  hosts: fortigate  # Referring to your FortiGate device in the inventory
+  gather_facts: no  # Skip fact gathering step
+  vars_files:
+    - vars/matrix.yml
+    - vars/policy_params.yml
+
+  tasks:
+    - name: Load test case
+      set_fact:
+        policy: "{{ vars[active_test] }}"
+
+    - name: Check if rule is compliant with matrix
+      set_fact:
+        rule_compliant: "{{ compliant_rules | selectattr('srcintf', 'equalto', policy.srcintf) 
+                                             | selectattr('dstintf', 'equalto', policy.dstintf) 
+                                             | selectattr('allowed_services', 'defined') 
+                                             | selectattr('allowed_services', 'contains', policy.service) 
+                                             | list | length > 0 }}"
+
+    - name: Validate rule
+      debug:
+        msg: "✅ The rule is compliant!"
+      when: rule_compliant
+
+    - name: Reject non-compliant rule
+      debug:
+        msg: "❌ This rule is non-compliant and will not be pushed!"
+      when: not rule_compliant
+
+    # 1. Render config template (only if compliant)
+    - name: Render CLI config into a local file
+      ansible.builtin.template:
+        src: templates/firewallrule.j2
+        dest: /tmp/fortigate_config.txt
+      delegate_to: localhost
+      when: rule_compliant
+
+    # 2. Read generated config content (only if compliant)
+    - name: Read generated config content
+      ansible.builtin.slurp:
+        src: /tmp/fortigate_config.txt
+      register: slurped_config
+      delegate_to: localhost
+      when: rule_compliant
+
+    # 3. Push config (only if valid and compliant)
+    - name: Push CLI config to FortiGate
+      ansible.builtin.raw: "{{ slurped_config['content'] | b64decode }}"
+      register: result
+      changed_when: false
+      when:
+        - rule_compliant
+        - "'❌ Not allowed' not in (slurped_config['content'] | b64decode)"
+        - slurped_config['content'] | b64decode | length > 0
+
+    # 4. Show result (only if compliant and push attempted)
+    - name: Display rule creation result
+      debug:
+        msg: "🧾 Rule creation response: {{ result }}"
+      when: rule_compliant and result is defined
+
+    # 5. Notify success (only if compliant and push succeeded)
+    - name: Notify successful rule push
+      debug:
+        msg: "✅ The firewall rule has been successfully pushed to the FortiGate device."
+      when: rule_compliant and result is defined and result.rc == 0
+
+    # 6. Cleanup temporary file (optional)
+    - name: Cleanup rendered config file
+      file:
+        path: "/tmp/fortigate_config.txt"
+        state: absent
+      delegate_to: localhost
+      when: rule_compliant

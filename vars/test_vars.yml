@@ -1,0 +1,6 @@
+active_test: "compliant_test"  # Change to "non_compliant_test" to test rejection
+
+compliant_test:
+  srcintf: "port2"
+  dstintf: "port1"
+  service: "HTTPS"  # Must match exactly

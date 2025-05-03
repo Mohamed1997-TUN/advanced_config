@@ -1,0 +1,7 @@
+{% if service in compliant_rules[0].allowed_services and 
+      srcintf == compliant_rules[0].srcintf and 
+      dstintf == compliant_rules[0].dstintf %}
+ALLOWED
+{% else %}
+NOT_ALLOWED
+{% endif %}
