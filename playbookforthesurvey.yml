@@ -1,0 +1,54 @@
+- name: Compliance Check and Push Firewall Policy via SSH
+  hosts: fortigate
+  gather_facts: no
+
+  tasks:
+    - name: Set firewall policy from survey inputs
+      set_fact:
+        policy:
+          name: "{{ policy_name }}"
+          srcintf: "{{ srcintf }}"
+          dstintf: "{{ dstintf }}"
+          service: "{{ service }}"
+
+    - name: Check if rule is compliant with matrix
+      set_fact:
+        rule_compliant: "{{ compliant_rules | selectattr('srcintf', 'equalto', policy.srcintf)
+                                             | selectattr('dstintf', 'equalto', policy.dstintf)
+                                             | selectattr('allowed_services', 'defined')
+                                             | selectattr('allowed_services', 'contains', policy.service)
+                                             | list | length > 0 }}"
+
+    - name: Display compliance result
+      debug:
+        msg: >-
+          {% if rule_compliant %}
+            ✅ The rule is compliant!
+          {% else %}
+            ❌ This rule is non-compliant and will not be pushed!
+          {% endif %}
+
+    - name: Render CLI config (if compliant)
+      template:
+        src: templates/firewallrule2.j2
+        dest: /tmp/fortigate_config.txt
+      delegate_to: localhost
+      when: rule_compliant
+
+    - name: Read rendered config
+      slurp:
+        src: /tmp/fortigate_config.txt
+      register: slurped_config
+      delegate_to: localhost
+      when: rule_compliant
+
+    - name: Push to FortiGate (if compliant)
+      raw: "{{ slurped_config['content'] | b64decode }}"
+      register: result
+      changed_when: false
+      when: rule_compliant
+
+    - name: Notify success
+      debug:
+        msg: "✅ Firewall rule successfully pushed."
+      when: rule_compliant and result is defined and result.rc == 0

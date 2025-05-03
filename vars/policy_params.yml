@@ -3,7 +3,7 @@ active_test: "compliant_test"
 compliant_test:
   policy_name: "Allow HTTPS"
   srcintf: "port2"
-  dstintf: "port1"
+  dstintf: "port5"
   service: "HTTPS"  # This matches a rule in the matrix
   policy_action: "accept"
   srcaddr: "all"
