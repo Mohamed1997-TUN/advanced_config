@@ -5,9 +5,8 @@
 
   vars_files:
     - vars/matrix.yml  # This file should define 'compliant_rules'
-
+    #- vars/survey_vars.yml
   tasks:
-    # Debug task to check survey variables
     - name: Debug Survey Variables
       debug:
         msg:
@@ -29,7 +28,8 @@
           source: "{{ policy_srcaddr }}"
           destination: "{{ policy_dstaddr }}"
           action: "{{ policy_action }}"
-          service: "{{ policy_service }}"
+          service: >-
+            {{ policy_service if policy_service is iterable and policy_service is not string else [policy_service] }}
           nat: "{{ policy_nat }}"
 
     - name: Check if rule is compliant with matrix
@@ -40,7 +40,7 @@
             | selectattr('srcintf', 'equalto', policy.srcintf)
             | selectattr('dstintf', 'equalto', policy.dstintf)
             | selectattr('allowed_services', 'defined')
-            | selectattr('allowed_services', 'search', policy.service | join(','))
+            | selectattr('allowed_services', 'contains', policy.service[0])
             | list | length > 0
           }}
 
@@ -55,28 +55,28 @@
       when: not rule_compliant
 
     - name: Render firewall rule config to a file
-      ansible.builtin.template:
+      template:
         src: templates/firewallrule.j2
         dest: /tmp/fortigate_config.txt
       delegate_to: localhost
       when: rule_compliant
 
     - name: Read rendered config
-      ansible.builtin.slurp:
+      slurp:
         src: /tmp/fortigate_config.txt
       register: slurped_config
       delegate_to: localhost
       when: rule_compliant
 
     - name: Push CLI config to FortiGate
-      ansible.builtin.raw: "{{ slurped_config['content'] | b64decode }}"
+      raw: "{{ slurped_config['content'] | b64decode }}"
       register: result
       changed_when: false
       when: rule_compliant
 
     - name: Display rule creation result
       debug:
-        msg: "📤 Rule creation response: {{ result }}"
+        msg: "📤 Rule creation response: {{ result.stdout }}"
       when: rule_compliant and result is defined
 
     - name: Confirm firewall rule push success

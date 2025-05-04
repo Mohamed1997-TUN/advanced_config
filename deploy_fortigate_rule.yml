@@ -3,7 +3,7 @@
   gather_facts: no  # Skip fact gathering step
   vars_files:
     - vars/matrix.yml
-    - vars/policy_params.yml
+    - vars/policy_params2.yml
 
   tasks:
     - name: Load test case
@@ -31,7 +31,7 @@
     # 1. Render config template (only if compliant)
     - name: Render CLI config into a local file
       ansible.builtin.template:
-        src: templates/firewallrule.j2
+        src: templates/firewallrule2.j2
         dest: /tmp/fortigate_config.txt
       delegate_to: localhost
       when: rule_compliant

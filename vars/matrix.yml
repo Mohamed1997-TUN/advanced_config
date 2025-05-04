@@ -1,4 +1,7 @@
 compliant_rules:
   - srcintf: "port2"
     dstintf: "port1"
-    allowed_services: "HTTPS"  # Only HTTPS allowed
+    allowed_services:
+      - HTTPS
+      - HTTP
+      - DNS
