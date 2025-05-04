@@ -4,8 +4,8 @@
   gather_facts: no
 
   vars_files:
-    - vars/matrix.yml  # Defines 'compliant_rules'
-
+    - vars/matrix.yml  # This file should define 'compliant_rules'
+    - vars/survey_vars.yml
   tasks:
     - name: Debug Survey Variables
       debug:
@@ -28,7 +28,8 @@
           source: "{{ policy_srcaddr }}"
           destination: "{{ policy_dstaddr }}"
           action: "{{ policy_action }}"
-          service: "{{ policy_service }}"
+          service: >-
+            {{ policy_service if policy_service is iterable and policy_service is not string else [policy_service] }}
           nat: "{{ policy_nat }}"
 
     - name: Check if rule is compliant with matrix
@@ -39,15 +40,9 @@
             | selectattr('srcintf', 'equalto', policy.srcintf)
             | selectattr('dstintf', 'equalto', policy.dstintf)
             | selectattr('allowed_services', 'defined')
-            | selectattr('allowed_services', 'contains_all', policy.service)
+            | selectattr('allowed_services', 'contains', policy.service[0])
             | list | length > 0
           }}
-
-    - name: Show compliance check
-      debug:
-        msg:
-          - "Policy being validated: {{ policy }}"
-          - "Rule is compliant? {{ rule_compliant }}"
 
     - name: Show compliance result
       debug:
