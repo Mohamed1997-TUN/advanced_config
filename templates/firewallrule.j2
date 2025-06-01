@@ -1,14 +1,15 @@
 config firewall policy
     edit 0
-        set name "{{ policy.policy_name }}"
+        set name "{{ policy.name }}"
         set srcintf "{{ policy.srcintf }}"
         set dstintf "{{ policy.dstintf }}"
-        set srcaddr "{{ policy.srcaddr }}"
-        set dstaddr "{{ policy.dstaddr }}"
-        set action "{{ policy.policy_action }}"
-        set service "{{ policy.service }}"
-        set schedule "{{ policy.schedule }}"
+        set srcaddr "{{ policy.source }}"
+        set dstaddr "{{ policy.destination }}"
+        set action "{{ policy.action }}"
+        set service {{ policy.service | join(" ") }}
+        set schedule "always"
         set nat {{ policy.nat }}
     next
 end
+
 
