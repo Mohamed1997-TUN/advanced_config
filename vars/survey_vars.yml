@@ -1,4 +1,4 @@
-  policy_name: "Allow HTTPS"
+  policy_name: "Allow cisco"
   policy_srcintf: "port2"
   policy_dstintf: "port1"
   policy_service: "HTTPS"  # This matches a rule in the matrix

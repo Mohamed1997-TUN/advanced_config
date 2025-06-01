@@ -1,7 +1,7 @@
 active_test: "compliant_test"
 
 compliant_test:
-  policy_name: "Allow HTTPS"
+  policy_name: "Allow cisco"
   srcintf: "port2"
   dstintf: "port1"
   service: "HTTPS"  # This matches a rule in the matrix
