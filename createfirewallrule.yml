@@ -3,7 +3,7 @@
   hosts: localhost
   vars_files:
     - vars/matrix.yml
-    - vars/policy_params.yml
+    - vars/policy_params2.yml
 
   tasks:
     - name: Load test case
