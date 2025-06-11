@@ -27,7 +27,7 @@
     # 1. Render config template
     - name: Render CLI config into a local file
       ansible.builtin.template:
-        src: templates/firewallrule.j2
+        src: templates/firewallrule2.j2
         dest: /tmp/fortigate_config.txt
       delegate_to: localhost
 
