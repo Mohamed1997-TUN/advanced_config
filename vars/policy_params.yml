@@ -1,10 +1,10 @@
 active_test: "compliant_test"
 
 compliant_test:
-  policy_name: "tacata"
+  name: "Test Policy"
   srcintf: "port2"
   dstintf: "port1"
-  service: "DNS"  # This matches a rule in the matrix
+  service: "HTTP"
   policy_action: "accept"
   srcaddr: "all"
   dstaddr: "all"

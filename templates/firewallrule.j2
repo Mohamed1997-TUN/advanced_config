@@ -3,12 +3,12 @@ config firewall policy
         set name "{{ policy.name }}"
         set srcintf "{{ policy.srcintf }}"
         set dstintf "{{ policy.dstintf }}"
-        set srcaddr "{{ policy.source }}"
-        set dstaddr "{{ policy.destination }}"
-        set action "{{ policy.action }}"
+        set srcaddr "{{ policy.srcaddr }}"  # Corrected this line
+        set dstaddr "{{ policy.dstaddr }}"  # Corrected this line
+        set action "{{ policy.policy_action }}"  # Also corrected to use 'policy_action'
         set service {{ policy.service | join(" ") }}
-        set schedule "always"
-        set nat {{ policy.nat }}
+        set schedule "{{ policy.schedule }}"
+        set nat "{{ policy.nat }}"
     next
 end
 
