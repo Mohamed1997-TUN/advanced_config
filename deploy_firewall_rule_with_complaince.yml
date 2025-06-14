@@ -2,22 +2,23 @@
   hosts: fortigate
   gather_facts: no
 
-  vars:
-    policy:
-      name: "{{ policy_name }}"
-      srcintf: "{{ policy_srcintf }}"
-      dstintf: "{{ policy_dstintf }}"
-      srcaddr: "{{ policy_srcaddr }}"
-      dstaddr: "{{ policy_dstaddr }}"
-      service: "{{ policy_service if policy_service is iterable else [policy_service] }}"
-      action: "{{ policy_action }}"
-      schedule: "{{ policy_schedule }}"
-      nat: "{{ policy_nat }}"
-
   vars_files:
-    - vars/matrix.yml  # If you're using a compliance matrix
+    - vars/matrix.yml  # Keep this if you want to use a matrix for compliance check
 
   tasks:
+    - name: Build policy dictionary from survey inputs
+      set_fact:
+        policy:
+          name: "{{ policy_name }}"
+          srcintf: "{{ policy_srcintf }}"
+          dstintf: "{{ policy_dstintf }}"
+          srcaddr: "{{ policy_srcaddr }}"
+          dstaddr: "{{ policy_dstaddr }}"
+          policy_action: "{{ policy_action }}"
+          service: "{{ policy_service }}"
+          schedule: "{{ policy_schedule }}"
+          nat: "{{ policy_nat }}"
+
     - name: Check if rule is compliant with matrix
       set_fact:
         rule_compliant: "{{ compliant_rules
@@ -69,4 +70,3 @@
         state: absent
       delegate_to: localhost
       when: rule_compliant
-

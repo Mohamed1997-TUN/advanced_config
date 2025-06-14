@@ -6,7 +6,7 @@ config firewall policy
         set srcaddr "{{ policy.srcaddr }}"
         set dstaddr "{{ policy.dstaddr }}"
         set action "{{ policy.policy_action }}"
-        set service "{{ policy.service }}"
+        set service {{ policy.service | join(' ') }}
         set schedule "{{ policy.schedule }}"
         set nat {{ policy.nat }}
         set comments "Pushed by Ansible"
