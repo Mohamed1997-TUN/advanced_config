@@ -1,17 +1,30 @@
+---
 - name: Compliance Check and Push Firewall Policy via SSH
   hosts: fortigate
   gather_facts: no
   vars_files:
-    - vars/matrix.yml  # ✅ still needed for compliance logic
+    - vars/matrix.yml
+    # vars/policy_params.yml  # Make sure this file contains the necessary default values or overrides
+
+  vars:
+    active_test: "compliant_test"  # This should match the test name in your vars/policy_params.yml file
 
   tasks:
+    - name: Load test case
+      set_fact:
+        policy: "{{ vars[active_test] }}"  # This loads the policy based on active_test (e.g., 'compliant_test')
+
+    - name: Debug policy variable  # Debugging to verify the policy is correctly set
+      debug:
+        var: policy
+
     - name: Check if rule is compliant with matrix
       set_fact:
         rule_compliant: "{{ compliant_rules
-                            | selectattr('srcintf', 'equalto', srcintf)
-                            | selectattr('dstintf', 'equalto', dstintf)
+                            | selectattr('srcintf', 'equalto', policy.srcintf)
+                            | selectattr('dstintf', 'equalto', policy.dstintf)
                             | selectattr('allowed_services', 'defined')
-                            | selectattr('allowed_services', 'contains', service)
+                            | selectattr('allowed_services', 'contains', policy.service)
                             | list | length > 0 }}"
 
     - name: Validate rule
@@ -24,33 +37,36 @@
         msg: "❌ This rule is non-compliant and cannot be created!"
       when: not rule_compliant
 
-    - name: Render CLI config into a local file
+    - name: Render CLI config into a local file (only if compliant)
       ansible.builtin.template:
         src: templates/firewallrule.j2
         dest: /tmp/fortigate_config.txt
       delegate_to: localhost
       when: rule_compliant
 
-    - name: Read generated config content
+    - name: Read generated config content (only if compliant)
       ansible.builtin.slurp:
         src: /tmp/fortigate_config.txt
       register: slurped_config
       delegate_to: localhost
       when: rule_compliant
 
-    - name: Push CLI config to FortiGate
+    - name: Push CLI config to FortiGate (only if valid and compliant)
       ansible.builtin.raw: "{{ slurped_config['content'] | b64decode }}"
       register: result
       changed_when: false
       failed_when: result.rc != 0
-      when: rule_compliant
+      when:
+        - rule_compliant
+        - "'❌ Not allowed' not in (slurped_config['content'] | b64decode)"
+        - slurped_config['content'] | b64decode | length > 0
 
-    - name: Notify successful rule push
+    - name: Notify successful rule push (only if successful)
       debug:
         msg: "✅ The firewall rule has been successfully pushed to the FortiGate device."
       when: rule_compliant and result is defined and result.rc == 0
 
-    - name: Cleanup temporary file
+    - name: Cleanup temporary file (optional)
       file:
         path: /tmp/fortigate_config.txt
         state: absent
