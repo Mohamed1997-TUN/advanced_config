@@ -3,12 +3,13 @@ config firewall policy
         set name "{{ policy.name }}"
         set srcintf "{{ policy.srcintf }}"
         set dstintf "{{ policy.dstintf }}"
-        set srcaddr "{{ policy.srcaddr }}"  # Corrected this line
-        set dstaddr "{{ policy.dstaddr }}"  # Corrected this line
-        set action "{{ policy.policy_action }}"  # Also corrected to use 'policy_action'
-        set service {{ policy.service | join(" ") }}
+        set srcaddr "{{ policy.srcaddr }}"
+        set dstaddr "{{ policy.dstaddr }}"
+        set action "{{ policy.policy_action }}"
+        set service "{{ policy.service }}"
         set schedule "{{ policy.schedule }}"
-        set nat "{{ policy.nat }}"
+        set nat {{ policy.nat }}
+        set comments "Pushed by Ansible"
     next
 end
 
