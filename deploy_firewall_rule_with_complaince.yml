@@ -2,21 +2,16 @@
   hosts: fortigate
   gather_facts: no
   vars_files:
-    - vars/matrix.yml
-    - vars/policy_params.yml
+    - vars/matrix.yml  # ✅ still needed for compliance logic
 
   tasks:
-    - name: Load test case
-      set_fact:
-        policy: "{{ vars[active_test] }}"
-
     - name: Check if rule is compliant with matrix
       set_fact:
         rule_compliant: "{{ compliant_rules
-                            | selectattr('srcintf', 'equalto', policy.srcintf)
-                            | selectattr('dstintf', 'equalto', policy.dstintf)
+                            | selectattr('srcintf', 'equalto', srcintf)
+                            | selectattr('dstintf', 'equalto', dstintf)
                             | selectattr('allowed_services', 'defined')
-                            | selectattr('allowed_services', 'contains', policy.service)
+                            | selectattr('allowed_services', 'contains', service)
                             | list | length > 0 }}"
 
     - name: Validate rule
