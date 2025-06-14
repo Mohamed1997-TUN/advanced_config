@@ -3,7 +3,7 @@
   gather_facts: no  # Skip fact gathering step
   vars_files:
     - vars/matrix.yml
-    - vars/policy_params2.yml
+    #- vars/policy_params2.yml
 
   tasks:
     - name: Load test case
