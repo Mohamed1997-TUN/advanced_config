@@ -1,65 +1,74 @@
 ---
-- name: Compliance Check and Push Firewall Policy via AWX Survey
+- name: Compliance Check and Push Firewall Policy via SSH
   hosts: fortigate
   gather_facts: no
 
-  vars_files:
-    - ../vars/matrix.yml
-    - ../vars/policy_params.yml
-
   tasks:
-    # Load policy from survey or fallback to file
-    - name: Set dynamic policy from survey
+    - name: Load survey values
       set_fact:
-        policy: >-
-          {{
-            {
-              'name': survey_policy_name | default(vars[active_test].name),
-              'srcintf': survey_srcintf | default(vars[active_test].srcintf),
-              'dstintf': survey_dstintf | default(vars[active_test].dstintf),
-              'service': survey_service | default(vars[active_test].service),
-              'policy_action': survey_action | default(vars[active_test].policy_action),
-              'srcaddr': survey_srcaddr | default(vars[active_test].srcaddr),
-              'dstaddr': survey_dstaddr | default(vars[active_test].dstaddr),
-              'nat': survey_nat | default(vars[active_test].nat),
-              'id': survey_policy_id | default(vars[active_test].id | default('auto'))
-            }
-          }}
-      when: active_test is defined
+        srcintf: "{{ survey.srcintf }}"
+        dstintf: "{{ survey.dstintf }}"
+        srcaddr: "{{ survey.srcaddr }}"
+        dstaddr: "{{ survey.dstaddr }}"
+        policy_action: "{{ survey.policy_action }}"
+        service: "{{ survey.service }}"
+        schedule: "{{ survey.schedule }}"
+        nat: "{{ survey.nat }}"
+        name: "{{ survey.name }}"
 
-    # Compliance check
-    - name: Validate rule against matrix
+    - name: Load compliance matrix
+      include_vars:
+        file: vars/matrix.yml
+        name: compliance_matrix
+
+    - name: Check if rule is compliant with matrix
       set_fact:
-        rule_compliant: >-
-          {{ compliant_rules
-            | selectattr('srcintf', 'equalto', policy.srcintf)
-            | selectattr('dstintf', 'equalto', policy.dstintf)
-            | selectattr('allowed_services', 'contains', policy.service)
-            | list | length > 0 }}
+        rule_compliant: "{{ compliance_matrix.rules
+                            | selectattr('srcintf', 'equalto', srcintf)
+                            | selectattr('dstintf', 'equalto', dstintf)
+                            | selectattr('allowed_services', 'defined')
+                            | selectattr('allowed_services', 'contains', service)
+                            | list | length > 0 }}"
 
-    # Fail fast if non-compliant
-    - name: Enforce compliance
-      fail:
-        msg: "❌ Rule violates matrix: srcintf={{ policy.srcintf }}, dstintf={{ policy.dstintf }}, service={{ policy.service }}"
+    - name: Validate rule
+      debug:
+        msg: "✅ The rule is compliant!"
+      when: rule_compliant
+
+    - name: Reject non-compliant rule
+      debug:
+        msg: "❌ This rule is non-compliant and cannot be created!"
       when: not rule_compliant
 
-    # Generate and push config
-    - name: Render FortiGate config
-      template:
-        src: ../templates/firewallrule.j2
-        dest: /tmp/fortigate-{{ inventory_hostname }}.txt
+    - name: Render CLI config into a local file
+      ansible.builtin.template:
+        src: templates/firewallrule.j2
+        dest: /tmp/fortigate_config.txt
       delegate_to: localhost
       when: rule_compliant
 
-    - name: Push config to FortiGate
-      ansible.builtin.raw: "{{ lookup('file', '/tmp/fortigate-' + inventory_hostname + '.txt') }}"
-      register: push_result
-      changed_when: push_result.rc == 0
+    - name: Read generated config content
+      ansible.builtin.slurp:
+        src: /tmp/fortigate_config.txt
+      register: slurped_config
+      delegate_to: localhost
       when: rule_compliant
 
-    - name: Cleanup
+    - name: Push CLI config to FortiGate
+      ansible.builtin.raw: "{{ slurped_config['content'] | b64decode }}"
+      register: result
+      changed_when: false
+      failed_when: result.rc != 0
+      when: rule_compliant
+
+    - name: Notify successful rule push
+      debug:
+        msg: "✅ The firewall rule has been successfully pushed to the FortiGate device."
+      when: rule_compliant and result is defined and result.rc == 0
+
+    - name: Cleanup temporary file
       file:
-        path: "/tmp/fortigate-{{ inventory_hostname }}.txt"
+        path: /tmp/fortigate_config.txt
         state: absent
       delegate_to: localhost
       when: rule_compliant

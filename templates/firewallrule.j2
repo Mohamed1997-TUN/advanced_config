@@ -1,16 +1,14 @@
 config firewall policy
     edit 0
-        set name "{{ policy.name }}"
-        set srcintf "{{ policy.srcintf }}"
-        set dstintf "{{ policy.dstintf }}"
-        set srcaddr "{{ policy.srcaddr }}"
-        set dstaddr "{{ policy.dstaddr }}"
-        set action "{{ policy.policy_action }}"
-        set service {{ policy.service | join(' ') }}
-        set schedule "{{ policy.schedule }}"
-        set nat {{ policy.nat }}
+        set name "{{ name }}"
+        set srcintf "{{ srcintf }}"
+        set dstintf "{{ dstintf }}"
+        set srcaddr "{{ srcaddr }}"
+        set dstaddr "{{ dstaddr }}"
+        set action "{{ policy_action }}"
+        set service "{{ service }}"
+        set schedule "{{ schedule }}"
+        set nat {{ nat }}
         set comments "Pushed by Ansible"
     next
 end
-
-
