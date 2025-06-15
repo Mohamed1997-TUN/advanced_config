@@ -1,21 +1,19 @@
----
 - name: Compliance Check and Push Firewall Policy via SSH
   hosts: fortigate
   gather_facts: no
+  vars:
+    # Define the variables directly from the command line using extra-vars
+    srcintf: "{{ srcintf }}"
+    dstintf: "{{ dstintf }}"
+    srcaddr: "{{ srcaddr }}"
+    dstaddr: "{{ dstaddr }}"
+    policy_action: "{{ policy_action }}"
+    service: "{{ service }}"
+    schedule: "{{ schedule }}"
+    nat: "{{ nat }}"
+    name: "{{ name }}"
 
   tasks:
-    - name: Load survey values
-      set_fact:
-        srcintf: "{{ survey.srcintf }}"
-        dstintf: "{{ survey.dstintf }}"
-        srcaddr: "{{ survey.srcaddr }}"
-        dstaddr: "{{ survey.dstaddr }}"
-        policy_action: "{{ survey.policy_action }}"
-        service: "{{ survey.service }}"
-        schedule: "{{ survey.schedule }}"
-        nat: "{{ survey.nat }}"
-        name: "{{ survey.name }}"
-
     - name: Load compliance matrix
       include_vars:
         file: vars/matrix.yml
@@ -72,3 +70,4 @@
         state: absent
       delegate_to: localhost
       when: rule_compliant
+

@@ -1,7 +1,9 @@
-compliant_rules:
+rules:
   - srcintf: "port2"
     dstintf: "port1"
     allowed_services:
-      - HTTPS
-      - HTTP
-      - DNS
+      - "HTTP"
+      - "HTTPS"
+    action: "accept"
+    schedule: "always"
+    nat: "enable"
