@@ -1,12 +1,11 @@
-active_test: "compliant_test"
+active_test: "default_policy"
 
-compliant_test:
-  name: "Allow_Web_Traffic"
+default_policy:
+  name: "Default Allow Web"
   srcintf: "port2"
   dstintf: "port1"
+  service: "HTTP"
+  policy_action: "accept"
   srcaddr: "all"
   dstaddr: "all"
-  service: "HTTPS"
-  policy_action: "accept"
-  schedule: "always"
   nat: "enable"
