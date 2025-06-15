@@ -19,14 +19,17 @@
         file: vars/matrix.yml
         name: compliance_matrix
 
+    - name: Debug compliance matrix
+      debug:
+        var: compliance_matrix
+
     - name: Check if rule is compliant with matrix
       set_fact:
-        rule_compliant: "{{ compliance_matrix.rules
-                            | selectattr('srcintf', 'equalto', srcintf)
-                            | selectattr('dstintf', 'equalto', dstintf)
-                            | selectattr('allowed_services', 'defined')
-                            | selectattr('allowed_services', 'contains', service)
-                            | list | length > 0 }}"
+        rule_compliant: "{{ compliance_matrix.rules | default([]) | selectattr('srcintf', 'equalto', srcintf) | selectattr('dstintf', 'equalto', dstintf) | selectattr('allowed_services', 'defined') | selectattr('allowed_services', 'contains', service) | list | length > 0 }}"
+
+    - name: Debug rule_compliant
+      debug:
+        var: rule_compliant
 
     - name: Validate rule
       debug:
@@ -70,4 +73,5 @@
         state: absent
       delegate_to: localhost
       when: rule_compliant
+
 
